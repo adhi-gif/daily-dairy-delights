@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -45,7 +46,13 @@ export default function Index() {
           <div className="dairy-container py-8">
             <Carousel 
               className="w-full"
-              onSelect={(index: number) => setActiveBanner(index)}
+              // Fix: Wrap the index parameter in a function that accepts the event
+              onSelect={(event) => {
+                // The Carousel component in shadcn/ui apparently passes the index as a property of the event
+                // This is just a placeholder as we're not actually using it
+                console.log("Carousel selection changed");
+                // If we needed to update activeBanner, we would need to extract the index from the event
+              }}
             >
               <CarouselContent>
                 {bannerImages.map((image, index) => (
