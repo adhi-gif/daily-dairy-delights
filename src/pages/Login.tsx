@@ -29,8 +29,8 @@ export default function Login() {
     }
   }, [isAuthenticated, navigate]);
   
-  // Dairy logo path
-  const logoPath = '/lovable-uploads/4dd7c2a4-5185-40cc-86ba-30e08b9dfd7c.png';
+  // New dairy logo path
+  const logoPath = '/lovable-uploads/458d151c-8df0-4e89-8646-b3e7218d0fbc.png';
   
   const requestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,11 +107,11 @@ export default function Login() {
       <img 
         src={logoPath} 
         alt="Dairy Products Logo" 
-        className="absolute top-10 left-1/2 transform -translate-x-1/2 w-36 h-36 z-10 rounded-full border-3 border-black object-contain bg-white p-1"
+        className="absolute top-10 left-1/2 transform -translate-x-1/2 w-52 h-auto z-10"
       />
       
       {/* Bottom content box */}
-      <div className="absolute bottom-0 bg-white w-full rounded-t-[40px] pt-16 pb-12 px-6 text-center shadow-[0_-4px_10px_rgba(0,0,0,0.15)]">
+      <div className="absolute bottom-0 bg-white w-full rounded-t-[40px] pt-28 pb-12 px-6 text-center shadow-[0_-4px_10px_rgba(0,0,0,0.15)]">
         <h1 className="text-3xl font-bold">
           <span className="text-[#1e90ff]">Dairy</span> Products
         </h1>
