@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { User } from '@/types';
 import { toast } from "sonner";
 
@@ -21,11 +21,30 @@ const mockUser: User = {
   name: 'John Doe',
   email: 'john@example.com',
   address: '123 Dairy Lane, Milk City',
-  phone: '555-123-4567'
+  phone: '555-123-4567',
+  isPhoneVerified: true
+};
+
+// Check for stored user in localStorage
+const getUserFromStorage = (): User | null => {
+  const storedUser = localStorage.getItem('dairyUser');
+  if (storedUser) {
+    return JSON.parse(storedUser);
+  }
+  return null;
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(getUserFromStorage());
+
+  // Store user in localStorage when it changes
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('dairyUser', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('dairyUser');
+    }
+  }, [user]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     // In a real app, this would be an API call to authenticate the user
@@ -50,10 +69,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const phoneLogin = async (phone: string): Promise<boolean> => {
     // In a real app, this would send an OTP to the phone number
     try {
-      // Simulate API call delay
+      // Simulate API call to send OTP
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      // For demo purposes, assume OTP was sent successfully
+      // Backend would typically generate a random OTP and send it via SMS
+      // For demo purposes, we'll simulate a successful OTP request
+      console.log(`Sending OTP to ${phone}`);
+      
+      // Store phone number temporarily so we can use it in verify step
+      sessionStorage.setItem('pendingPhone', phone);
+      
       toast.success('OTP sent to your phone');
       return true;
     } catch (error) {
@@ -65,18 +90,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const verifyOtp = async (phone: string, otp: string): Promise<boolean> => {
     // In a real app, this would verify the OTP with the backend
     try {
-      // Simulate API call delay
+      // Simulate API call for OTP verification
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      // For demo purposes, assume any 6-digit OTP is valid
+      // Backend would typically verify that the OTP matches what was sent
+      console.log(`Verifying OTP: ${otp} for phone: ${phone}`);
+      
+      // For demo purposes, we'll accept any 6-digit OTP
       if (otp.length === 6) {
         const phoneUser: User = {
           ...mockUser,
-          phone: phone
+          phone: phone,
+          isPhoneVerified: true
         };
         
         setUser(phoneUser);
-        toast.success('Successfully logged in');
+        toast.success('OTP verified successfully');
+        
+        // Clean up the temporary storage
+        sessionStorage.removeItem('pendingPhone');
+        
         return true;
       } else {
         toast.error('Invalid OTP');
@@ -118,6 +151,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = () => {
     setUser(null);
+    localStorage.removeItem('dairyUser');
     toast.info('Logged out successfully');
   };
 

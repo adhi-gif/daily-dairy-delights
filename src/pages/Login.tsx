@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,7 @@ import { Phone, Shield } from "lucide-react";
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { isAuthenticated, phoneLogin, verifyOtp } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   
   // Authentication states
@@ -22,7 +22,14 @@ export default function Login() {
   const [name, setName] = useState('');
   const [registerPhone, setRegisterPhone] = useState('');
   
-  // Dairy logo uploaded by the user
+  // If user is already authenticated, redirect to home page
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+  
+  // Dairy logo path
   const logoPath = '/lovable-uploads/4dd7c2a4-5185-40cc-86ba-30e08b9dfd7c.png';
   
   const requestOtp = async (e: React.FormEvent) => {
@@ -36,18 +43,17 @@ export default function Login() {
     setIsLoading(true);
     
     try {
-      // In a real app, this would make an API call to send OTP
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 800));
+      const success = await phoneLogin(phoneNumber);
       
-      setShowOtpInput(true);
-      toast.success('OTP sent to your phone');
+      if (success) {
+        setShowOtpInput(true);
+      }
     } finally {
       setIsLoading(false);
     }
   };
   
-  const verifyOtp = async () => {
+  const handleVerifyOtp = async () => {
     if (!otpValue || otpValue.length !== 6) {
       toast.error('Please enter a valid OTP');
       return;
@@ -56,15 +62,11 @@ export default function Login() {
     setIsLoading(true);
     
     try {
-      // Mock OTP verification (in real app, this would be an API call)
-      // For demo, we'll accept any 6-digit code
-      await new Promise(resolve => setTimeout(resolve, 800));
+      const success = await verifyOtp(phoneNumber, otpValue);
       
-      // Simulate successful login
-      await login('test@example.com', 'password');
-      navigate('/');
-    } catch (error) {
-      toast.error('OTP verification failed');
+      if (success) {
+        navigate('/', { replace: true });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -86,14 +88,14 @@ export default function Login() {
     setIsLoading(true);
     
     try {
-      // In a real app, this would register the user via API
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Show OTP input for verification
+      // Set phone number and request OTP
       setPhoneNumber(registerPhone);
-      setShowOtpInput(true);
-      setShowCreateAccount(false);
-      toast.success('OTP sent to your phone');
+      const success = await phoneLogin(registerPhone);
+      
+      if (success) {
+        setShowOtpInput(true);
+        setShowCreateAccount(false);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -266,7 +268,7 @@ export default function Login() {
                   <Button 
                     type="button" 
                     className="w-full bg-[#1e90ff] hover:bg-[#0b75d1] text-white rounded-full py-6"
-                    onClick={verifyOtp}
+                    onClick={handleVerifyOtp}
                     disabled={isLoading || otpValue.length !== 6}
                   >
                     {isLoading ? 'Verifying...' : 'Verify & Login'}
