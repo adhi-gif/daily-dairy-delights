@@ -26,6 +26,7 @@ export interface User {
   email: string;
   address?: string;
   phone?: string;
+  isPhoneVerified?: boolean;
 }
 
 export interface SubscriptionPlan {

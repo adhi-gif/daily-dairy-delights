@@ -8,6 +8,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   register: (name: string, email: string, password: string) => Promise<boolean>;
+  phoneLogin: (phone: string) => Promise<boolean>;
+  verifyOtp: (phone: string, otp: string) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -41,6 +43,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (error) {
       toast.error('Login failed');
+      return false;
+    }
+  };
+
+  const phoneLogin = async (phone: string): Promise<boolean> => {
+    // In a real app, this would send an OTP to the phone number
+    try {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // For demo purposes, assume OTP was sent successfully
+      toast.success('OTP sent to your phone');
+      return true;
+    } catch (error) {
+      toast.error('Failed to send OTP');
+      return false;
+    }
+  };
+
+  const verifyOtp = async (phone: string, otp: string): Promise<boolean> => {
+    // In a real app, this would verify the OTP with the backend
+    try {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // For demo purposes, assume any 6-digit OTP is valid
+      if (otp.length === 6) {
+        const phoneUser: User = {
+          ...mockUser,
+          phone: phone
+        };
+        
+        setUser(phoneUser);
+        toast.success('Successfully logged in');
+        return true;
+      } else {
+        toast.error('Invalid OTP');
+        return false;
+      }
+    } catch (error) {
+      toast.error('OTP verification failed');
       return false;
     }
   };
@@ -85,6 +128,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isAuthenticated: !!user,
         login, 
         register,
+        phoneLogin,
+        verifyOtp,
         logout 
       }}
     >

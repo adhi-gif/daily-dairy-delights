@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -46,7 +45,7 @@ export default function Index() {
           <div className="dairy-container py-8">
             <Carousel 
               className="w-full"
-              onSelect={(index) => setActiveBanner(index)}
+              onSelect={(index: number) => setActiveBanner(index)}
             >
               <CarouselContent>
                 {bannerImages.map((image, index) => (
