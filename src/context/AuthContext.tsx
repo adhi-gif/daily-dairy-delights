@@ -1,181 +1,53 @@
+import React, { createContext, useContext, useState } from 'react';
+import { auth } from '../firebase';
+import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { User } from '@/types';
-import { toast } from "sonner";
+const AuthContext = createContext<any>(null);
 
-interface AuthContextType {
-  user: User | null;
-  isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (name: string, email: string, password: string) => Promise<boolean>;
-  phoneLogin: (phone: string) => Promise<boolean>;
-  verifyOtp: (phone: string, otp: string) => Promise<boolean>;
-  logout: () => void;
-}
+export const AuthProvider = ({ children }: any) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [confirmationResult, setConfirmationResult] = useState<any>(null);
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+  const phoneLogin = async (phone: string) => {
+    const verifier = new RecaptchaVerifier('recaptcha-container', {
+      size: 'invisible',
+    }, auth);
 
-// Mock user for demonstration
-const mockUser: User = {
-  id: '1',
-  name: 'John Doe',
-  email: 'john@example.com',
-  address: '123 Dairy Lane, Milk City',
-  phone: '555-123-4567',
-  isPhoneVerified: true
-};
-
-// Check for stored user in localStorage
-const getUserFromStorage = (): User | null => {
-  const storedUser = localStorage.getItem('dairyUser');
-  if (storedUser) {
-    return JSON.parse(storedUser);
-  }
-  return null;
-};
-
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(getUserFromStorage());
-
-  // Store user in localStorage when it changes
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem('dairyUser', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('dairyUser');
-    }
-  }, [user]);
-
-  const login = async (email: string, password: string): Promise<boolean> => {
-    // In a real app, this would be an API call to authenticate the user
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      if (email === 'test@example.com' && password === 'password') {
-        setUser(mockUser);
-        toast.success('Successfully logged in');
-        return true;
-      } else {
-        toast.error('Invalid credentials');
-        return false;
-      }
-    } catch (error) {
-      toast.error('Login failed');
-      return false;
-    }
-  };
-
-  const phoneLogin = async (phone: string): Promise<boolean> => {
-    // In a real app, this would send an OTP to the phone number
-    try {
-      // Simulate API call to send OTP
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Backend would typically generate a random OTP and send it via SMS
-      // For demo purposes, we'll simulate a successful OTP request
-      console.log(`Sending OTP to ${phone}`);
-      
-      // Store phone number temporarily so we can use it in verify step
-      sessionStorage.setItem('pendingPhone', phone);
-      
-      toast.success('OTP sent to your phone');
+      const result = await signInWithPhoneNumber(auth, phone, verifier);
+      setConfirmationResult(result);
       return true;
     } catch (error) {
-      toast.error('Failed to send OTP');
+      console.error(error);
       return false;
     }
   };
 
-  const verifyOtp = async (phone: string, otp: string): Promise<boolean> => {
-    // In a real app, this would verify the OTP with the backend
+  const verifyOtp = async (otp: string) => {
+    if (!confirmationResult) return false;
     try {
-      // Simulate API call for OTP verification
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Backend would typically verify that the OTP matches what was sent
-      console.log(`Verifying OTP: ${otp} for phone: ${phone}`);
-      
-      // For demo purposes, we'll accept any 6-digit OTP
-      if (otp.length === 6) {
-        const phoneUser: User = {
-          ...mockUser,
-          phone: phone,
-          isPhoneVerified: true
-        };
-        
-        setUser(phoneUser);
-        toast.success('OTP verified successfully');
-        
-        // Clean up the temporary storage
-        sessionStorage.removeItem('pendingPhone');
-        
-        return true;
-      } else {
-        toast.error('Invalid OTP');
-        return false;
-      }
-    } catch (error) {
-      toast.error('OTP verification failed');
-      return false;
-    }
-  };
-
-  const register = async (name: string, email: string, password: string): Promise<boolean> => {
-    // In a real app, this would be an API call to register the user
-    try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // For demo purposes, just check if email is already used
-      if (email === 'test@example.com') {
-        toast.error('Email already registered');
-        return false;
-      }
-      
-      // Mock successful registration
-      const newUser: User = {
-        id: Date.now().toString(),
-        name,
-        email,
-      };
-      
-      setUser(newUser);
-      toast.success('Registration successful');
+      await confirmationResult.confirm(otp);
+      setIsAuthenticated(true);  // Set the user as authenticated after successful OTP verification
       return true;
     } catch (error) {
-      toast.error('Registration failed');
+      console.error('OTP verification failed', error);
       return false;
     }
+  };
+
+  const login = () => {
+    setIsAuthenticated(true);  // Log in user by setting the authentication state to true
   };
 
   const logout = () => {
-    setUser(null);
-    localStorage.removeItem('dairyUser');
-    toast.info('Logged out successfully');
+    setIsAuthenticated(false); // Log out by resetting the authentication state
   };
 
   return (
-    <AuthContext.Provider 
-      value={{ 
-        user, 
-        isAuthenticated: !!user,
-        login, 
-        register,
-        phoneLogin,
-        verifyOtp,
-        logout 
-      }}
-    >
+    <AuthContext.Provider value={{ isAuthenticated, phoneLogin, verifyOtp, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+export const useAuth = () => useContext(AuthContext);
